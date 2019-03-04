@@ -1,0 +1,1 @@
+# angular browser storage
