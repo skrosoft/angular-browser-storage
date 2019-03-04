@@ -1,17 +1,17 @@
 import { Inject, Injectable, InjectionToken } from '@angular/core';
+import * as CryptoJS from 'crypto-js';
 import {Observable, Subject, Subscription} from 'rxjs';
 import {isArray, isNull, isString} from 'util';
 import * as uuid from 'uuid';
-import * as CryptoJS from 'crypto-js';
 
 export const BROWSER_LOCAL_STORAGE = new InjectionToken<Storage>('Browser Local Storage', {
-    providedIn: 'root',
-    factory: () => localStorage
+    factory: () => localStorage,
+    providedIn: 'root'
 });
 
 export const BROWSER_SESSION_STORAGE = new InjectionToken<Storage>('Browser Session Storage', {
-    providedIn: 'root',
-    factory: () => sessionStorage
+    factory: () => sessionStorage,
+    providedIn: 'root'
 });
 
 export declare type BrowserStorageType = 'local' | 'session';
@@ -54,6 +54,66 @@ export class BrowserStorageService {
         }
     }
 
+    public configure(options: BrowserStorageOptions = {}) {
+
+        Object.assign(this.options, options);
+
+        return this;
+    }
+
+    public has(key: string, storageType?: BrowserStorageType): boolean {
+        return !!this.getStorage(storageType).getItem(key);
+    }
+
+    public getObserver(key: string, storageType?: BrowserStorageType): Observable<any> {
+        this._init(key, storageType);
+        return this.storageStates[this.getIndexKey(key, storageType)];
+    }
+
+    public get(key: string, storageType?: BrowserStorageType): any {
+        let value = this.getStorage(storageType).getItem(this.hash(key));
+        if (!isNull(value)) {
+            value = this.decrypt(value);
+            try { value = JSON.parse(value); } catch {
+                return value;
+            }
+        }
+        return value;
+    }
+
+    public getTyped<T>(key: string, storageType?: BrowserStorageType): T {
+        return this.get(key, storageType);
+    }
+
+    public set(key: string, value: any, storageType?: BrowserStorageType) {
+        this._init(key, storageType).next(value);
+    }
+
+    public trigger(key: string | string[], storageType?: BrowserStorageType) {
+        if (!isArray(key)) {
+            key = [key];
+        }
+        for (const k of key) {
+            this._init(k, storageType).next(this.get(k, storageType));
+        }
+    }
+
+    public remove(key: string, storageType?: BrowserStorageType) {
+        this._init(key, storageType).next(undefined);
+
+        this.getStorage(storageType).removeItem(key);
+    }
+
+    public clear(storageType?: BrowserStorageType) {
+        const storage = this.getStorage(storageType);
+        for (const key in storage) {
+            if (storage.hasOwnProperty(key)) {
+                this.remove(key, storageType);
+            }
+        }
+        storage.clear();
+    }
+
     private _init(key: string, storageType?: BrowserStorageType): Subject<string> {
 
         const indexKey = this.getIndexKey(key, storageType);
@@ -71,26 +131,19 @@ export class BrowserStorageService {
         return this.storageSubjects[indexKey];
     }
 
-    getIndexKey(key: string, storageType?: BrowserStorageType): string {
+    private getIndexKey(key: string, storageType?: BrowserStorageType): string {
         return this.getStorageType(storageType) + '_' + key;
     }
 
-    getStorageType(storageType?: BrowserStorageType): BrowserStorageType {
+    private getStorageType(storageType?: BrowserStorageType): BrowserStorageType {
         return storageType ? storageType : this.options.default!;
     }
 
-    getStorage(storageType?: BrowserStorageType): Storage {
+    private getStorage(storageType?: BrowserStorageType): Storage {
         return this.getStorageType(storageType) === 'session' ? this.sessionStorage : this.localStorage;
     }
 
-    configure(options: BrowserStorageOptions = {}) {
-
-        Object.assign(this.options, options);
-
-        return this;
-    }
-
-    getFingerprint(storageType?: BrowserStorageType): string {
+    private getFingerprint(storageType?: BrowserStorageType): string {
         const key = 'fingerprint';
 
         if (!this.has(key)) {
@@ -98,57 +151,6 @@ export class BrowserStorageService {
         }
 
         return this.getStorage(storageType).getItem(key)! + this.options.salt;
-    }
-
-    has(key: string, storageType?: BrowserStorageType): boolean {
-        return !!this.getStorage(storageType).getItem(key);
-    }
-
-    getObserver(key: string, storageType?: BrowserStorageType): Observable<any> {
-        this._init(key, storageType);
-        return this.storageStates[this.getIndexKey(key, storageType)];
-    }
-
-    get(key: string, storageType?: BrowserStorageType): any {
-        let value = this.getStorage(storageType).getItem(this.hash(key));
-        if (!isNull(value)) {
-            value = this.decrypt(value);
-            try { value = JSON.parse(value); } catch {}
-        }
-        return value;
-    }
-
-    getTyped<T>(key: string, storageType?: BrowserStorageType): T {
-        return this.get(key, storageType);
-    }
-
-    set(key: string, value: any, storageType?: BrowserStorageType) {
-        this._init(key, storageType).next(value);
-    }
-
-    trigger(key: string | string[], storageType?: BrowserStorageType) {
-        if (!isArray(key)) {
-            key = [key];
-        }
-        for (const k of key) {
-            this._init(k, storageType).next(this.get(k, storageType));
-        }
-    }
-
-    remove(key: string, storageType?: BrowserStorageType) {
-        this._init(key, storageType).next(undefined);
-
-        this.getStorage(storageType).removeItem(key);
-    }
-
-    clear(storageType?: BrowserStorageType) {
-        const storage = this.getStorage(storageType);
-        for (const key in storage) {
-            if (storage.hasOwnProperty(key)) {
-                this.remove(key, storageType);
-            }
-        }
-        storage.clear();
     }
 
     private hash(text: string): string {
