@@ -1,12 +1,19 @@
 {
   "compilerOptions": {
-    "target": "es6",
     "module": "commonjs",
+    "target": "es5",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "sourceMap": false,
+    "moduleResolution": "node",
     "declaration": true,
-    "outDir": "./lib",
-    "strict": true,
-    "experimentalDecorators": true
+    "outDir": "./dist",
+    "lib": ["dom", "es6"]
   },
-  "include": ["src"],
-  "exclude": ["node_modules", "**/__tests__/*"]
+  "files": [
+    "src/index.ts"
+  ],
+  "angularCompilerOptions": {
+    "genDir": "compiled"
+  }
 }
