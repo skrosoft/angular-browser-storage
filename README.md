@@ -71,11 +71,25 @@ You can optionally use another storage type:
 
 ```typescript
 const key:string = this.storage.get('key', 'session');
-const user:User = this.storage.get('user');
-const user = this.storage.getTyped<User>('user');
+const user:User = this.storage.get('user', 'session');
+const user = this.storage.getTyped<User>('user', 'session');
 ```
 
 Value will be automatically un-serialized to object.
+
+### Get all keys of a storage
+
+Using the default storage type:
+
+```typescript
+const keys = this.storage.keys();
+```
+
+You can optionally use another storage type:
+
+```typescript
+const keys = this.storage.keys('session');
+```
 
 ### Remove a variable
 
@@ -140,3 +154,19 @@ ngOnInit() {
 ```
 
 You can use the trigger function to trigger an observer. It's useful to detect variable after the page has been loaded.
+
+### Available constants
+
+If you prefer, instead of using 'local' or 'session' for Browser Storage Types, you can use the following constants:
+
+Example:
+
+```typescript
+
+import {BrowserStorageService, BROWSER_STORAGE_TYPE_LOCAL, BROWSER_STORAGE_TYPE_SESSION} from 'angular-browser-storage';
+
+// ...
+
+this.storage.remove('key', BROWSER_STORAGE_TYPE_LOCAL);
+this.storage.remove('key', BROWSER_STORAGE_TYPE_SESSION);
+```

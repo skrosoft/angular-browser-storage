@@ -49,11 +49,8 @@ export class BrowserStorageService {
     this.sessionStorage = sessionStorage;
 
     for (const storageType of BROWSER_STORAGE_TYPES) {
-      const storage = this.getStorage(storageType);
-      for (const key in storage) {
-        if (storage.hasOwnProperty(key)) {
-          this._init(key, storageType);
-        }
+      for (const key of this.keys(storageType)) {
+        this._init(key, storageType);
       }
     }
   }
@@ -66,6 +63,17 @@ export class BrowserStorageService {
 
   public has(key: string, storageType?: BrowserStorageType): boolean {
     return !!this.getStorage(storageType).getItem(key);
+  }
+
+  public keys(storageType?: BrowserStorageType): string[] {
+    const keys = [];
+    const storage = this.getStorage(storageType);
+    for (const key in storage) {
+      if (storage.hasOwnProperty(key)) {
+        keys.push(key);
+      }
+    }
+    return keys;
   }
 
   public getObserver(key: string, storageType?: BrowserStorageType): Observable<any> {

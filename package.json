@@ -1,6 +1,6 @@
 {
   "name": "angular-browser-storage",
-  "version": "1.0.15",
+  "version": "1.0.16",
   "description": "An observable browser storage service with encryption for Angular",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
