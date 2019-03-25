@@ -61,7 +61,8 @@ export class BrowserStorageService {
     return this;
   }
 
-  public has(key: string, storageType?: BrowserStorageType): boolean {
+  public has(key: string, storageType?: BrowserStorageType, doHash = true): boolean {
+    key = doHash ? this.hash(key) : key;
     return !!this.getStorage(storageType).getItem(key);
   }
 
@@ -158,7 +159,7 @@ export class BrowserStorageService {
   private getFingerprint(storageType?: BrowserStorageType): string {
     const key = 'fingerprint';
 
-    if (!this.has(key)) {
+    if (!this.has(key, storageType, false)) {
       this.getStorage(storageType).setItem(key, uuid.v4());
     }
 
